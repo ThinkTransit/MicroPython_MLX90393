@@ -23,18 +23,18 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="adafruit-circuitpython-mlx90393",
+    name="micropython-mlx90393",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
-    description="CircuitPython driver for the MLX90393 3-axis magnetometer.",
+    description="MicroPython driver for the MLX90393 3-axis magnetometer.",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     # The project's main homepage.
-    url="https://github.com/adafruit/Adafruit_CircuitPython_MLX90393",
+    url="https://github.com/ThinkTransit/MicroPython_MLX90393",
     # Author details
     author="Adafruit Industries",
     author_email="circuitpython@adafruit.com",
-    install_requires=["Adafruit-Blinka", "adafruit-circuitpython-busdevice"],
+    install_requires=[],
     # Choose your license
     license="MIT",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -49,8 +49,8 @@ setup(
         "Programming Language :: Python :: 3.5",
     ],
     # What does your project relate to?
-    keywords="adafruit three-axis magnetometer magnet mlx90393 hardware micropython circuitpython",
+    keywords="micropython three-axis magnetometer magnet mlx90393 hardware",
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    py_modules=["adafruit_mlx90393"],
+    py_modules=["micropython_mlx90393"],
 )

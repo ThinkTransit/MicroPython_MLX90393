@@ -3,29 +3,19 @@
 # SPDX-License-Identifier: MIT
 
 """
-`adafruit_mlx90393`
+`micropython_mlx90393`
 ====================================================
 
-This is a breakout for the Adafruit MLX90393 magnetometer sensor breakout.
+Forked from https://github.com/adafruit/Adafruit_CircuitPython_MLX90393 and modified for MicroPython
 
-* Author(s): ktown
+* Author(s): ktown, pjoy
 
 Implementation Notes
 --------------------
 
 **Hardware:**
 
-* Adafruit `MLX90393 Magnetometer Sensor Breakout Board
-  <https://www.adafruit.com/product/4022>`_ (Product ID: 4022)
-
-**Software and Dependencies:**
-
-* Adafruit CircuitPython firmware for the supported boards:
-  https://circuitpython.org/downloads
-* Adafruit's Bus Device library:
-  https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
-* Adafruit's Register library:
-  https://github.com/adafruit/Adafruit_CircuitPython_Register
+* MLX90393 Magnetometer Sensor IC
 
 """
 
@@ -36,11 +26,10 @@ try:
 except ImportError:
     import ustruct as struct
 
-from adafruit_bus_device.i2c_device import I2CDevice
 from micropython import const
 
 __version__ = "0.0.0-auto.0"
-__repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_MLX90393.git"
+__repo__ = "https://github.com/ThinkTransit/MicroPython_MLX90393.git"
 
 _CMD_SB = const(0b00010000)  # Start burst mode
 _CMD_SW = const(0b00100000)  # Start wakeup on change mode
@@ -177,15 +166,14 @@ class MLX90393:  # pylint: disable=too-many-instance-attributes
 
         .. code-block:: python
 
-            import board
-            import adafruit_mlx90393
+            import micropython_mlx90393
 
-        Once this is done you can define your `board.I2C` object and define your sensor object
+        Once this is done you can define your `I2C` object and define your sensor object
 
         .. code-block:: python
 
-            i2c = board.I2C()  # uses board.SCL and board.SDA
-            SENSOR = adafruit_mlx90393.MLX90393(i2c)
+            i2c = machine.SoftI2C()
+            SENSOR = micropython_mlx90393.MLX90393(i2c)
 
         Now you have access to the :attr:`magnetic` attribute
 
@@ -205,7 +193,8 @@ class MLX90393:  # pylint: disable=too-many-instance-attributes
         oversampling=OSR_3,
         debug=False,
     ):  # pylint: disable=too-many-arguments
-        self.i2c_device = I2CDevice(i2c_bus, address)
+        self.address = address
+        self.i2c_bus = i2c_bus
         self._debug = debug
         self._status_last = 0
         self._res_x = self._res_y = self._res_z = resolution
@@ -244,21 +233,21 @@ class MLX90393:  # pylint: disable=too-many-instance-attributes
 
         if len(payload) == 1:
             # Transceive with repeated start
-            with self.i2c_device as i2c:
-                i2c.write_then_readinto(payload, data)
+            self.i2c_bus.writeto(self.address, payload)
+            data = self.i2c_bus.readfrom(self.address, len(data))
         else:
             # Write 'value' to the specified register
             # TODO: Check this. It's weird that the write is accepted but the read is naked.
-            with self.i2c_device as i2c:
-                i2c.write(payload)
 
-                while True:
-                    try:
-                        i2c.readinto(data)
-                        if data[0]:
-                            break
-                    except OSError:
-                        pass
+            self.i2c_bus.writeto(self.address, payload)
+
+            while True:
+                try:
+                    data = self.i2c_bus.readfrom(self.address, len(data))
+                    if data[0]:
+                        break
+                except OSError:
+                    pass
 
         # Track status byte
         self._status_last = data[0]
@@ -400,13 +389,12 @@ class MLX90393:  # pylint: disable=too-many-instance-attributes
         """
         # Write 'value' to the specified register
         payload = bytes([_CMD_RR, reg << 2])
-        with self.i2c_device as i2c:
-            i2c.write(payload)
+        self.i2c_bus.writeto(self.address, payload)
 
         # Read the response (+1 to account for the mandatory status byte!)
         data = bytearray(3)
-        with self.i2c_device as i2c:
-            i2c.readinto(data)
+        data = self.i2c_bus.readfrom(self.address, len(data))
+
         # Unpack data (status byte, big-endian 16-bit register value)
         self._status_last, val = struct.unpack(">BH", data)
         if self._debug:
